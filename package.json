@@ -4,13 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "author": "Bruno Souza <bruno@detroitledger.tech>",
+  "description": "WAX Labs Frontend - Security patched June 2024",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "yarn lint --fix",
     "preview": "vite preview",
-    "postinstall": "husky install"
+    "postinstall": "husky install",
+    "update-deps": "npm update --save"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.1.1",
@@ -29,7 +31,7 @@
     "@wharfkit/wallet-plugin-anchor": "^1.1.0",
     "@wharfkit/wallet-plugin-cloudwallet": "^1.1.0",
     "@wharfkit/web-renderer": "^1.1.1",
-    "axios": "^1.7.4",
+    "axios": "^1.7.6",
     "date-fns": "^2.30.0",
     "dompurify": "^3.2.4",
     "eosjs": "^22.1.0",
@@ -79,13 +81,13 @@
     "husky": "^8.0.3",
     "jest": "^29.5.0",
     "jest-cli": "^29.5.0",
-    "postcss": "^8.4.31",
+    "postcss": "^8.4.35",
     "prettier": "^2.8.8",
     "prettier-plugin-tailwindcss": "^0.3.0",
     "sass": "^1.62.1",
     "tailwindcss": "^3.3.2",
     "typescript": "5.0.4",
-    "vite": "^4.5.6",
+    "vite": "^5.2.2",
     "vite-plugin-svgr": "^3.2.0",
     "vite-tsconfig-paths": "^4.2.0"
   }

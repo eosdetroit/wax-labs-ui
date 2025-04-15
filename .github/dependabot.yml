@@ -1,0 +1,20 @@
+# Dependabot configuration file
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "teamlead"
+    assignees:
+      - "frontend-team"
+    labels:
+      - "dependencies"
+      - "security"
+    # Update only security dependencies
+    allow:
+      - dependency-type: "production"
+    # Enable vulnerability alerts
+    vulnerability-alerts: true
