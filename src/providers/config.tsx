@@ -19,6 +19,8 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
   } = useQuery({
     queryKey: ['configData'],
     queryFn: () => formattedConfigData(),
+    staleTime: 3600000, // 1 hour - config data rarely changes
+    gcTime: 86400000, // 24 hours - keep in cache for a day
     refetchOnMount: false,
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,

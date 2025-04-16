@@ -24,48 +24,62 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
   const disableNotificationKey = !!localStorage.getItem(`${READ_NOTIFICATIONS_STORAGE}-disable-notification`);
   const isAdmin = useIsAdmin();
   const [read, setRead] = useState<string[]>(getStorage(storageKey));
+  const [isTabVisible, setIsTabVisible] = useState<boolean>(document.visibilityState === 'visible');
 
+  /**
+   * Optimized data fetching strategy:
+   * - Reduced polling frequency from 10s to 30s to decrease network requests
+   * - Added 15s staleTime to leverage cached data before refetching
+   * - Implemented intelligent polling that pauses when tab is not visible
+   * - Queries are enabled based on authentication status and tab visibility
+   */
   const notificationResult = useQueries({
     queries: [
       {
         queryKey: ['proposerEndVotingNotifications', actor],
         queryFn: () => proposerEndVotingNotifications({ actor: actor as string }),
-        refetchInterval: 10e3,
+        refetchInterval: isTabVisible ? 30e3 : false,
+        staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
       },
       {
         queryKey: ['startVotingNotifications', actor],
         queryFn: () => startVotingNotifications({ actor: actor as string }),
-        refetchInterval: 10e3,
+        refetchInterval: isTabVisible ? 30e3 : false,
+        staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
       },
       {
         queryKey: ['proposerDeliverableNotifications', actor],
         queryFn: () => proposerDeliverableNotifications({ actor: actor as string }),
-        refetchInterval: 10e3,
+        refetchInterval: isTabVisible ? 30e3 : false,
+        staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
       },
       {
         queryKey: ['reviewerDeliverableNotifications', actor],
         queryFn: () => reviewerDeliverableNotifications({ actor: actor as string }),
-        refetchInterval: 10e3,
+        refetchInterval: isTabVisible ? 30e3 : false,
+        staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
       },
       {
         queryKey: ['adminEndVotingNotifications', actor, isAdmin],
         queryFn: () => (isAdmin ? adminEndVotingNotifications() : Promise.resolve([])),
-        refetchInterval: 10e3,
+        refetchInterval: isTabVisible ? 30e3 : false,
+        staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
       },
       {
         queryKey: ['adminToReviewNotifications', actor, isAdmin],
         queryFn: () => (isAdmin ? adminToReviewNotifications() : Promise.resolve([])),
-        refetchInterval: 10e3,
+        refetchInterval: isTabVisible ? 30e3 : false,
+        staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
       },
@@ -113,6 +127,25 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
     [notificationResult, readNotification, isLoading, read]
   );
 
+  // Monitor tab visibility to optimize data fetching
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(document.visibilityState === 'visible');
+    };
+
+    // Initial visibility state
+    handleVisibilityChange();
+
+    // Attach visibility change listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Clean up event listener on unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Handle storage changes for read notifications
   useEffect(() => {
     if (isAuthenticated && storageKey) {
       // handle what happens on key press
