@@ -1,5 +1,4 @@
-import { QueryClient, DefaultOptions, QueryFunction, QueryKey } from '@tanstack/react-query';
-import { measureNetworkTime } from '../utils/performanceMonitoring';
+import { QueryClient, DefaultOptions } from '@tanstack/react-query';
 
 /**
  * QueryClient configuration with default settings for optimized caching and performance
@@ -9,15 +8,7 @@ import { measureNetworkTime } from '../utils/performanceMonitoring';
  * retry: 2 - Failed queries will retry twice before giving up
  * refetchOnWindowFocus: true - Queries will refetch when window regains focus
  * refetchOnReconnect: true - Queries will refetch when network reconnects
- * 
- * Note: Performance monitoring should be implemented at the individual query level 
- * using the measureNetworkTime utility from performanceMonitoring.ts
  */
-
-// We don't need a custom queryFn at the global level as it would prevent 
-// individual queries from defining their own fetching logic.
-// The performance monitoring should be applied at specific query instances
-// or wrapped around actual API calls.
 
 // Default options with optimized caching settings
 const defaultOptions: DefaultOptions = {
