@@ -16,6 +16,27 @@ This is a base template for React projects. It includes:
 - SVG icons as React components
 - SVG icons as URL
 
+## Performance Optimizations
+
+This application implements several performance optimizations:
+
+### Data Fetching and Caching
+- Global React Query configuration with optimal caching settings (see `src/api/queryClient.ts`)
+- Intelligent polling that pauses when the tab is not visible
+- Optimized staleTime and cacheTime settings based on data change frequency
+
+### Performance Monitoring
+- Real-time monitoring of API call frequency (development mode only)
+- Network request timing measurements with warnings for slow requests
+- Automatic performance metrics logging
+- Memory usage tracking
+
+When working with this application, be mindful of these performance optimizations and follow these best practices:
+1. Set appropriate staleTime values based on how frequently your data changes
+2. Avoid unnecessary polling when real-time updates aren't critical
+3. Use the performance monitoring tools to identify and fix slow or frequent API calls
+4. Consider tab visibility when implementing polling mechanisms
+
 ## How to use SVGs
 
 ### As React components

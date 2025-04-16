@@ -2,6 +2,21 @@
  * Performance monitoring utilities for tracking API calls and network metrics
  */
 
+// Define the memory interface that's available in some browsers (like Chrome)
+interface PerformanceMemory {
+  jsHeapSizeLimit: number;
+  totalJSHeapSize: number;
+  usedJSHeapSize: number;
+}
+
+// Extend the Performance interface to include the memory property
+interface Performance {
+  memory?: PerformanceMemory;
+}
+
+// Type guard to check if we're in development mode
+const isDevelopmentMode = (): boolean => import.meta.env.DEV === true;
+
 // Store API call counts to detect frequent calls
 const apiCallCounts: Record<string, { count: number; lastReset: number }> = {};
 
@@ -16,7 +31,12 @@ const TIMING_THRESHOLD = 1000; // Warn for requests taking longer than 1 second
  */
 export function trackApiCall(endpoint: string): void {
   // Don't track in production
-  if (process.env.NODE_ENV === 'production') return;
+  if (!isDevelopmentMode()) return;
+  
+  if (typeof endpoint !== 'string' || !endpoint) {
+    console.warn('Invalid endpoint provided to trackApiCall');
+    return;
+  }
   
   const now = Date.now();
   
@@ -48,9 +68,20 @@ export async function measureNetworkTime<T>(
   endpoint: string,
   requestFn: () => Promise<T>
 ): Promise<T> {
-  // Don't measure in production
-  if (process.env.NODE_ENV === 'production') {
+  // Don't measure in production - just execute the request
+  if (!isDevelopmentMode()) {
     return requestFn();
+  }
+  
+  // Type checking
+  if (typeof endpoint !== 'string' || !endpoint) {
+    console.warn('Invalid endpoint provided to measureNetworkTime');
+    return requestFn();
+  }
+
+  if (typeof requestFn !== 'function') {
+    console.error('Invalid request function provided to measureNetworkTime');
+    throw new Error('Invalid request function');
   }
   
   // Track this API call
@@ -87,7 +118,10 @@ export async function measureNetworkTime<T>(
  */
 export function logPerformanceMetrics(): void {
   // Don't log in production
-  if (process.env.NODE_ENV === 'production') return;
+  if (!isDevelopmentMode()) return;
+  
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined' || !window) return;
   
   const metrics = {
     // Core Web Vitals and other performance metrics
@@ -102,12 +136,31 @@ export function logPerformanceMetrics(): void {
 /**
  * Gets navigation timing data from the Performance API
  */
-function getNavigationTiming() {
+function getNavigationTiming(): Record<string, number> | null {
+  // No-op in production mode
+  if (!isDevelopmentMode()) return null;
+
   if (typeof window === 'undefined' || !window.performance || !window.performance.timing) {
     return null;
   }
   
   const timing = window.performance.timing;
+  
+  // Check that all required timing properties exist
+  if (
+    typeof timing.domainLookupEnd !== 'number' || 
+    typeof timing.domainLookupStart !== 'number' ||
+    typeof timing.connectEnd !== 'number' ||
+    typeof timing.connectStart !== 'number' ||
+    typeof timing.responseEnd !== 'number' ||
+    typeof timing.requestStart !== 'number' ||
+    typeof timing.domComplete !== 'number' ||
+    typeof timing.domLoading !== 'number' ||
+    typeof timing.loadEventEnd !== 'number' ||
+    typeof timing.navigationStart !== 'number'
+  ) {
+    return null;
+  }
   
   return {
     dnsLookup: timing.domainLookupEnd - timing.domainLookupStart,
@@ -121,24 +174,52 @@ function getNavigationTiming() {
 /**
  * Gets memory usage statistics if available
  */
-function getMemoryUsage() {
+function getMemoryUsage(): { 
+  jsHeapSizeLimit: string; 
+  totalJSHeapSize: string; 
+  usedJSHeapSize: string; 
+} | null {
+  // No-op in production mode
+  if (!isDevelopmentMode()) return null;
+
   // Check if performance.memory is available (Chrome only)
-  const performance = window.performance as any;
-  if (typeof performance === 'undefined' || !performance.memory) {
+  if (
+    typeof window === 'undefined' || 
+    !window.performance || 
+    !window.performance.memory
+  ) {
+    return null;
+  }
+  
+  const memory = window.performance.memory as PerformanceMemory;
+  
+  // Verify that memory properties exist
+  if (
+    typeof memory.jsHeapSizeLimit !== 'number' ||
+    typeof memory.totalJSHeapSize !== 'number' ||
+    typeof memory.usedJSHeapSize !== 'number'
+  ) {
     return null;
   }
   
   return {
-    jsHeapSizeLimit: formatBytes(performance.memory.jsHeapSizeLimit),
-    totalJSHeapSize: formatBytes(performance.memory.totalJSHeapSize),
-    usedJSHeapSize: formatBytes(performance.memory.usedJSHeapSize),
+    jsHeapSizeLimit: formatBytes(memory.jsHeapSizeLimit),
+    totalJSHeapSize: formatBytes(memory.totalJSHeapSize),
+    usedJSHeapSize: formatBytes(memory.usedJSHeapSize),
   };
 }
 
 /**
  * Summarizes API call statistics
  */
-function summarizeApiCalls() {
+function summarizeApiCalls(): Array<{
+  endpoint: string;
+  calls: number;
+  timeWindow: string;
+}> {
+  // No-op in production mode
+  if (!isDevelopmentMode()) return [];
+
   return Object.entries(apiCallCounts).map(([endpoint, data]) => ({
     endpoint,
     calls: data.count,
@@ -149,28 +230,47 @@ function summarizeApiCalls() {
 /**
  * Formats bytes into a human-readable string
  */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
+function formatBytes(bytes: number | undefined): string {
+  if (bytes === undefined || bytes === 0 || typeof bytes !== 'number') return '0 Bytes';
   
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  if (i < 0 || i >= sizes.length) return '0 Bytes'; // Additional safety check
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 // Initialize performance monitoring
 export function initPerformanceMonitoring(): void {
-  // Don't initialize in production
-  if (process.env.NODE_ENV === 'production') return;
+  // Don't initialize in production or if not in browser
+  if (!isDevelopmentMode() || typeof window === 'undefined' || !window) return;
   
-  // Log initial metrics
-  window.addEventListener('load', () => {
-    setTimeout(() => logPerformanceMetrics(), 3000);
-  });
-  
-  // Log metrics periodically
-  setInterval(() => logPerformanceMetrics(), 60000); // Every minute
-  
-  console.info('✅ Performance monitoring initialized');
+  try {
+    // Log initial metrics
+    window.addEventListener('load', () => {
+      setTimeout(() => logPerformanceMetrics(), 3000);
+    });
+    
+    // Log metrics periodically
+    const intervalId = setInterval(() => logPerformanceMetrics(), 60000); // Every minute
+    
+    // Provide a way to clean up the interval if needed
+    window.__performanceMonitoringCleanup = () => {
+      clearInterval(intervalId);
+      console.info('Performance monitoring stopped');
+    };
+    
+    console.info('✅ Performance monitoring initialized');
+  } catch (error) {
+    console.warn('Failed to initialize performance monitoring:', error);
+  }
+}
+
+// Add cleanup interface to Window object
+declare global {
+  interface Window {
+    __performanceMonitoringCleanup?: () => void;
+  }
 }

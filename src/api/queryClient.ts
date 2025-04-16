@@ -1,4 +1,4 @@
-import { QueryClient, DefaultOptions } from '@tanstack/react-query';
+import { QueryClient, DefaultOptions, QueryFunction, QueryKey } from '@tanstack/react-query';
 import { measureNetworkTime } from '../utils/performanceMonitoring';
 
 /**
@@ -10,30 +10,16 @@ import { measureNetworkTime } from '../utils/performanceMonitoring';
  * refetchOnWindowFocus: true - Queries will refetch when window regains focus
  * refetchOnReconnect: true - Queries will refetch when network reconnects
  * 
- * Performance Monitoring:
- * - Default queryFn is enhanced with performance monitoring
- * - Tracks API call frequency and response times
- * - Logs warnings for slow or frequent API calls
+ * Note: Performance monitoring should be implemented at the individual query level 
+ * using the measureNetworkTime utility from performanceMonitoring.ts
  */
 
-// Create a custom fetch function that measures network performance
-const createQueryFn = () => {
-  return async ({ queryKey }: { queryKey: unknown[] }) => {
-    // Use the query key's first element (usually the endpoint name) for monitoring
-    const endpoint = Array.isArray(queryKey) ? String(queryKey[0]) : 'unknown-endpoint';
-    
-    // Wrap the fetch call with performance monitoring
-    return measureNetworkTime(endpoint, async () => {
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        throw new Error(`Network request failed: ${response.status}`);
-      }
-      return response.json();
-    });
-  };
-};
+// We don't need a custom queryFn at the global level as it would prevent 
+// individual queries from defining their own fetching logic.
+// The performance monitoring should be applied at specific query instances
+// or wrapped around actual API calls.
 
-// Default options with performance monitoring
+// Default options with optimized caching settings
 const defaultOptions: DefaultOptions = {
   queries: {
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -41,7 +27,6 @@ const defaultOptions: DefaultOptions = {
     retry: 2,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    queryFn: createQueryFn(),
   },
 };
 
