@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 import { API_URL } from '@/constants.ts';
+import { setupAxiosMonitoring } from '@/utils/performanceMonitoring';
 
 export const AUTH_TOKEN_KEY = 'authToken:accessKey';
 
@@ -35,5 +36,8 @@ const onRequestError = (error: AxiosError): Promise<AxiosError> => {
 };
 
 api.interceptors.request.use(authTokenInterceptor({}), onRequestError);
+
+// Apply performance monitoring to track API call frequency and timing
+setupAxiosMonitoring(api);
 
 export default api;

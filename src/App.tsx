@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 
 import { queryClient } from '@/api/queryClient';
@@ -9,8 +9,14 @@ import { ConfigProvider } from '@/providers/config.tsx';
 import { NotificationsProvider } from '@/providers/notifications.tsx';
 import { ToastProvider } from '@/providers/toast';
 import { route } from '@/route';
+import { initPerformanceMonitoring } from '@/utils/performanceMonitoring';
 
 export function App() {
+  // Initialize performance monitoring in development environment
+  useEffect(() => {
+    initPerformanceMonitoring();
+  }, []);
+
   return (
     <ChainProvider>
       <QueryClientProvider client={queryClient}>
@@ -18,7 +24,7 @@ export function App() {
           <ToastProvider>
             <NotificationsProvider>
               <RouterProvider router={route} />
-              <ReactQueryDevtools initialIsOpen={true} />
+              <ReactQueryDevtools initialIsOpen={false} />
             </NotificationsProvider>
           </ToastProvider>
         </ConfigProvider>
