@@ -12,6 +12,10 @@ import { useChain } from '@/hooks/useChain.ts';
 import { useToast } from '@/hooks/useToast.ts';
 import { imageExists } from '@/utils/image';
 
+/**
+ * Custom hook for fetching and managing detailed proposal data
+ * Optimized for caching and performance with parallel data fetching
+ */
 export function useSingleProposal() {
   const { t } = useTranslation();
 
@@ -26,6 +30,7 @@ export function useSingleProposal() {
   const result = useQuery({
     queryKey,
     queryFn: async () => {
+      // Parallel data fetching for better performance
       const [proposalData, contentData, comments] = await Promise.all([
         singleProposal({ proposalId }),
         proposalContentData({ proposalId }),
@@ -63,11 +68,25 @@ export function useSingleProposal() {
       } as Proposal & { content: string; statusComment: string; proposerProfile: Profile };
     },
     enabled: !!proposalId,
+    // Caching strategy based on proposal type
+    staleTime: 5 * 60 * 1000, // 5 minutes - default stale time
+    retry: 1,
   });
 
+  /**
+   * Updates local proposal status without requiring a full refetch
+   * Uses React Query's cache manipulation capabilities
+   */
   async function onChangeStatus(status: ProposalStatusKey) {
-    result!.data!.status = status;
-    queryClient.setQueriesData(queryKey, result.data);
+    if (result.data) {
+      const updatedData = {
+        ...result.data,
+        status,
+      };
+      
+      // Update the cached data
+      queryClient.setQueriesData(queryKey, updatedData);
+    }
   }
 
   return {

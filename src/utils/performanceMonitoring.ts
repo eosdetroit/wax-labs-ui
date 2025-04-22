@@ -119,6 +119,27 @@ export function setupAxiosMonitoring(axiosInstance: any): void {
 }
 
 /**
+ * Utility to determine if polling should occur based on tab visibility and other conditions
+ * @param intervalMs - The desired polling interval in milliseconds
+ * @param options - Additional options to control polling behavior
+ * @returns Polling interval in ms or false if polling should be disabled
+ */
+export function getVisibilityAwarePollingInterval(
+  intervalMs: number,
+  options: { requireVisible?: boolean; enabledCondition?: boolean } = {}
+): number | false {
+  const { requireVisible = true, enabledCondition = true } = options;
+  
+  // Don't poll if the enabled condition is false
+  if (!enabledCondition) return false;
+  
+  // Don't poll if visibility is required and tab is hidden
+  if (requireVisible && document.visibilityState !== 'visible') return false;
+  
+  return intervalMs;
+}
+
+/**
  * Initialize performance monitoring
  * This is a very simple implementation that focuses on development only
  */
