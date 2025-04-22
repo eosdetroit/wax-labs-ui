@@ -11,6 +11,7 @@ import { NotificationMapping } from '@/api/models/notifications';
 import { NotificationsContext } from '@/contexts/notifications';
 import { useChain } from '@/hooks/useChain';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { getVisibilityAwarePollingInterval } from '@/utils/performanceMonitoring';
 
 const READ_NOTIFICATIONS_STORAGE = 'waxlabs:readNotifications';
 
@@ -38,7 +39,10 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
       {
         queryKey: ['proposerEndVotingNotifications', actor],
         queryFn: () => proposerEndVotingNotifications({ actor: actor as string }),
-        refetchInterval: isTabVisible ? 30e3 : false,
+        refetchInterval: getVisibilityAwarePollingInterval(30e3, {
+          requireVisible: true,
+          enabledCondition: !!isAuthenticated && !!actor && !disableNotificationKey
+        }),
         staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
@@ -46,7 +50,10 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
       {
         queryKey: ['startVotingNotifications', actor],
         queryFn: () => startVotingNotifications({ actor: actor as string }),
-        refetchInterval: isTabVisible ? 30e3 : false,
+        refetchInterval: getVisibilityAwarePollingInterval(30e3, {
+          requireVisible: true,
+          enabledCondition: !!isAuthenticated && !!actor && !disableNotificationKey
+        }),
         staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
@@ -54,7 +61,10 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
       {
         queryKey: ['proposerDeliverableNotifications', actor],
         queryFn: () => proposerDeliverableNotifications({ actor: actor as string }),
-        refetchInterval: isTabVisible ? 30e3 : false,
+        refetchInterval: getVisibilityAwarePollingInterval(30e3, {
+          requireVisible: true,
+          enabledCondition: !!isAuthenticated && !!actor && !disableNotificationKey
+        }),
         staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
@@ -62,7 +72,10 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
       {
         queryKey: ['reviewerDeliverableNotifications', actor],
         queryFn: () => reviewerDeliverableNotifications({ actor: actor as string }),
-        refetchInterval: isTabVisible ? 30e3 : false,
+        refetchInterval: getVisibilityAwarePollingInterval(30e3, {
+          requireVisible: true,
+          enabledCondition: !!isAuthenticated && !!actor && !disableNotificationKey
+        }),
         staleTime: 15e3,
         refetchOnWindowFocus: false,
         enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
@@ -70,18 +83,24 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
       {
         queryKey: ['adminEndVotingNotifications', actor, isAdmin],
         queryFn: () => (isAdmin ? adminEndVotingNotifications() : Promise.resolve([])),
-        refetchInterval: isTabVisible ? 30e3 : false,
+        refetchInterval: getVisibilityAwarePollingInterval(30e3, {
+          requireVisible: true,
+          enabledCondition: !!isAuthenticated && !!actor && !disableNotificationKey && !!isAdmin
+        }),
         staleTime: 15e3,
         refetchOnWindowFocus: false,
-        enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
+        enabled: !!isAuthenticated && !!actor && !disableNotificationKey && !!isAdmin,
       },
       {
         queryKey: ['adminToReviewNotifications', actor, isAdmin],
         queryFn: () => (isAdmin ? adminToReviewNotifications() : Promise.resolve([])),
-        refetchInterval: isTabVisible ? 30e3 : false,
+        refetchInterval: getVisibilityAwarePollingInterval(30e3, {
+          requireVisible: true,
+          enabledCondition: !!isAuthenticated && !!actor && !disableNotificationKey && !!isAdmin
+        }),
         staleTime: 15e3,
         refetchOnWindowFocus: false,
-        enabled: !!isAuthenticated && !!actor && !disableNotificationKey,
+        enabled: !!isAuthenticated && !!actor && !disableNotificationKey && !!isAdmin,
       },
     ],
   });
